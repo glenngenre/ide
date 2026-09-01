@@ -112,8 +112,6 @@ const layoutConfig = {
     ],
 };
 
-// --- error display ---------------------------------------------------------
-
 function showError(title, content) {
     $("#judge0-site-modal #title").html(title);
     $("#judge0-site-modal .content").html(content);
@@ -204,7 +202,6 @@ async function selectLanguageById(languageId) {
     }
 }
 
-// --- FIX: Only one version of this function ---
 async function selectLanguageForExtension(extension) {
     const language = getLanguageForExtension(extension);
     await selectLanguageById(language.language_id);
@@ -271,8 +268,6 @@ async function run() {
     }
 }
 
-// --- file open/save ---------------------------------------------------
-
 function setSourceCodeName(name) {
     currentFileName = name;
     $(".lm_title")[0].innerText = name;
@@ -314,14 +309,16 @@ function setFontSizeForAllEditors(size) {
     setFontSizeForEditors([sourceEditor, stdinEditor, stdoutEditor], size);
 }
 
-// --- language loading ---------------------------------------------------
-
 async function loadLanguagesIntoDropdown() {
     let languages;
     try {
-        languages = await fetchLanguages();
+        const authHeaders = getAuthHeaders();
+        languages = await fetchLanguages(authHeaders);
     } catch (err) {
-        handleRunError(err);
+        // Don't use handleRunError here - it depends on UI elements that might not exist yet
+        console.error('Failed to load languages:', err);
+        showError('Error Loading Languages',
+            'Failed to load available programming languages. Please check your connection and try again.');
         return;
     }
 
@@ -337,22 +334,17 @@ async function loadLanguagesIntoDropdown() {
     $selectLanguage.append(options);
 }
 
-// --- FIX: Remove reference to getSelectedLanguage ---
 async function loadSelectedLanguage(skipSetDefaultSourceCodeName = false) {
     monaco.editor.setModelLanguage(
         sourceEditor.getModel(),
         $selectLanguage.find(":selected").attr("langauge_mode"),
     );
 
-    // Since we removed flavor, we just set a default name
     if (!skipSetDefaultSourceCodeName) {
-        // Use the selected language name for the file
         const selectedText = $selectLanguage.find(":selected").text();
         setSourceCodeName(`Untitled.${selectedText.toLowerCase()}`);
     }
 }
-
-// --- persistence ---------------------------------------------------------
 
 function persistState() {
     saveState({
@@ -399,8 +391,6 @@ function clear() {
     $commandLineArguments.val("");
     $statusLine.html("");
 }
-
-// --- layout sizing ---------------------------------------------------------
 
 function refreshSiteContentHeight() {
     const navigationHeight = document.getElementById(

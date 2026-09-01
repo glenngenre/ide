@@ -45,10 +45,15 @@ export function networkError(cause) {
     return new Judge0Error(0, "Network error", { message: String(cause) });
 }
 
-export async function fetchLanguages() {
+export async function fetchLanguages(authHeaders = {}) {
     let response;
     try {
-        response = await fetch(`${CODE_API_BASE_URL}/languages`);
+        response = await fetch(`${CODE_API_BASE_URL}/languages`, {
+            headers: {
+                'Content-Type': 'application/json',
+                ...authHeaders,
+            },
+        });
     } catch (err) {
         throw networkError(err);
     }
@@ -107,7 +112,6 @@ export async function buildSubmissionPayload({
     return payload;
 }
 
-// ✅ Simplified - no flavor parameter needed
 export async function createSubmission(payload, authHeaders = {}) {
     let response;
     try {
