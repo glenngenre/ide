@@ -1,5 +1,3 @@
-import * as monaco from 'monaco-editor';
-
 export function createEditor(container, { language, readOnly, minimap }) {
     return monaco.editor.create(container, {
         automaticLayout: true,

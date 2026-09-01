@@ -23,8 +23,6 @@ import {
     registerInlineCompletionProvider,
 } from "./editors.js";
 import { loadState, saveState, debounce } from "./storage.js";
-import DOMPurify from 'dompurify';
-import marked from 'marked';
 
 function getAuthHeaders() {
     const token = getAuthToken();
