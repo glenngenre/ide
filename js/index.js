@@ -329,7 +329,7 @@ async function loadLanguagesIntoDropdown() {
     const options = languages.map((language) => {
         const option = new Option(language.name, language.id);
         option.setAttribute(
-            "langauge_mode",
+            "language_mode",
             getEditorLanguageMode(language.name),
         );
         return option;
@@ -345,7 +345,7 @@ async function loadSelectedLanguage(skipSetDefaultSourceCodeName = false) {
 
     monaco.editor.setModelLanguage(
         sourceEditor.getModel(),
-        $selectLanguage.find(":selected").attr("langauge_mode"),
+        $selectLanguage.find(":selected").attr("language_mode"),
     );
 
     if (!skipSetDefaultSourceCodeName) {
