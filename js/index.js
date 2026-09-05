@@ -301,7 +301,9 @@ async function openAction() {
 }
 
 async function saveAction() {
-    saveFile(sourceEditor.getValue(), getSourceCodeName());
+    persistState();
+    // TODO: Ask where to save file
+    // saveFile(sourceEditor.getValue(), getSourceCodeName());
 }
 
 function setFontSizeForAllEditors(size) {
