@@ -1,4 +1,4 @@
-import { getAuthToken } from './auth.js';
+import { getAuthToken } from '../auth.js';
 
 const API_BASE_URL = 'https://api.apps.skwtr.com/ide/v1';
 

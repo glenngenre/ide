@@ -3,8 +3,8 @@ import {
     DEFAULT_COMPILER_OPTIONS,
     DEFAULT_SOURCE,
     DEFAULT_STDIN,
-} from "./constants.js";
-import { normalizeFilename } from "./file_operations.js";
+} from "../constants.js";
+import { normalizeFilename } from "../files/file-service.js";
 
 export function createEditorState(saved = {}) {
     let values = {

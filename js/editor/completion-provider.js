@@ -1,17 +1,3 @@
-export function createEditor(container, { language, readOnly, minimap }) {
-    return monaco.editor.create(container, {
-        automaticLayout: true,
-        scrollBeyondLastLine: !!minimap,
-        readOnly: !!readOnly,
-        language,
-        minimap: { enabled: !!minimap },
-    });
-}
-
-export function setFontSizeForEditors(editors, fontSize) {
-    editors.forEach((editor) => editor?.updateOptions({ fontSize }));
-}
-
 function extractCompletionText(aiResponse) {
     let value = "";
 
@@ -38,10 +24,6 @@ function extractCompletionText(aiResponse) {
         .trim();
 }
 
-// Registers the inline (ghost-text) completion provider on the source
-// editor. `deps` is injected so this module doesn't need to import
-// auth.js/ai.js/configuration.js directly, which makes it easy to test or
-// swap out in isolation.
 export function registerInlineCompletionProvider(deps) {
     const {
         getAuthToken,
@@ -67,7 +49,6 @@ export function registerInlineCompletionProvider(deps) {
                 endLineNumber: position.lineNumber,
                 endColumn: position.column,
             });
-
             const textAfterCursor = model.getValueInRange({
                 startLineNumber: position.lineNumber,
                 startColumn: position.column,
@@ -93,17 +74,15 @@ export function registerInlineCompletionProvider(deps) {
             }
 
             return {
-                items: [
-                    {
-                        insertText: text,
-                        range: new monaco.Range(
-                            position.lineNumber,
-                            position.column,
-                            position.lineNumber,
-                            position.column,
-                        ),
-                    },
-                ],
+                items: [{
+                    insertText: text,
+                    range: new monaco.Range(
+                        position.lineNumber,
+                        position.column,
+                        position.lineNumber,
+                        position.column,
+                    ),
+                }],
             };
         },
         handleItemDidShow: () => {},
