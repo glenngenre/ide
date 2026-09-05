@@ -45,6 +45,7 @@ let $statusLine;
 
 let timeStart;
 let isRunning = false;
+const AUTOSAVE_INTERVAL_MS = 5000;
 
 const layoutConfig = {
     settings: {
@@ -551,6 +552,7 @@ document.addEventListener("DOMContentLoaded", async function () {
             setDefaults();
             refreshLayoutSize();
             $selectLanguage.prop("disabled", false);
+            window.setInterval(persistState, AUTOSAVE_INTERVAL_MS);
             window.top.postMessage({ event: "initialised" }, "*");
         });
 
@@ -678,6 +680,9 @@ document.addEventListener("DOMContentLoaded", async function () {
             }
         } else if (e.data.action === "run") {
             run();
+            if (e.data.api_key) {
+                persistState();
+            }
         }
     };
 });
