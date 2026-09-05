@@ -354,6 +354,10 @@ async function loadSelectedLanguage(skipSetDefaultSourceCodeName = false) {
 }
 
 function persistState() {
+    if (!sourceEditor || !stdinEditor || !$selectLanguage) {
+        return;
+    }
+
     saveState({
         sourceCode: sourceEditor.getValue(),
         fileName: currentFileName,
