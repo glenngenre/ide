@@ -1,4 +1,4 @@
-import { getAuthToken } from './auth.js';
+import { getAuthToken } from '../auth.js';
 
 const API_BASE_URL = 'https://api.apps.skwtr.com/ide/v1';
 
@@ -61,7 +61,9 @@ export async function getInlineCompletion(textBeforeCursor, textAfterCursor, mod
         });
 
         if (response.status === 401) {
-            localStorage.clear();
+            localStorage.removeItem('skwtr_jwt');
+            localStorage.removeItem('skwtr_role');
+            localStorage.removeItem('skwtr_username');
             $('#skwtr-login-modal').modal('show');
             return null;
         }

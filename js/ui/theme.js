@@ -1,5 +1,5 @@
 "use strict";
-import configuration from "./configuration.js";
+import configuration from "../configuration.js";
 
 const theme = {
     set(name, save = true) {
