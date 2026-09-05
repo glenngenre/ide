@@ -335,6 +335,10 @@ async function loadLanguagesIntoDropdown() {
 }
 
 async function loadSelectedLanguage(skipSetDefaultSourceCodeName = false) {
+    if (!sourceEditor) {
+        return;
+    }
+
     monaco.editor.setModelLanguage(
         sourceEditor.getModel(),
         $selectLanguage.find(":selected").attr("langauge_mode"),
@@ -418,6 +422,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     refreshSiteContentHeight();
 
     $selectLanguage = $("#select-language");
+    $selectLanguage.prop("disabled", true);
     $selectLanguage.change(function (event, data) {
         const skipSetDefaultSourceCodeName =
             data && data.skipSetDefaultSourceCodeName;
@@ -543,6 +548,7 @@ document.addEventListener("DOMContentLoaded", async function () {
         layout.on("initialised", function () {
             setDefaults();
             refreshLayoutSize();
+            $selectLanguage.prop("disabled", false);
             window.top.postMessage({ event: "initialised" }, "*");
         });
 
