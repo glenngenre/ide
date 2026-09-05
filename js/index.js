@@ -1,4 +1,5 @@
 import configuration from "./configuration.js";
+import "./theme.js";
 import { requireAuthentication, getAuthToken, initAuth } from "./auth.js";
 import { sendChatMessage, getInlineCompletion } from "./ai.js";
 import {
