@@ -61,7 +61,9 @@ export async function getInlineCompletion(textBeforeCursor, textAfterCursor, mod
         });
 
         if (response.status === 401) {
-            localStorage.clear();
+            localStorage.removeItem('skwtr_jwt');
+            localStorage.removeItem('skwtr_role');
+            localStorage.removeItem('skwtr_username');
             $('#skwtr-login-modal').modal('show');
             return null;
         }

@@ -2,6 +2,52 @@
     min-width: 15rem !important;
 }
 
+.judge0-file-name-item {
+    min-width: 11rem;
+}
+
+#judge0-file-name {
+    max-width: 12rem;
+    min-width: 7rem;
+    text-overflow: ellipsis;
+}
+
+.judge0-save-status {
+    color: rgba(0, 0, 0, 0.55);
+    font-size: 0.85rem;
+    white-space: nowrap;
+}
+
+.judge0-save-status-saved {
+    color: #21ba45;
+}
+
+.judge0-save-status-saving,
+.judge0-save-status-unsaved {
+    color: #b58105;
+}
+
+.judge0-save-status-error {
+    color: #db2828;
+}
+
+body.judge0-dark-mode .judge0-save-status {
+    color: rgba(255, 255, 255, 0.65);
+}
+
+body.judge0-dark-mode .judge0-save-status-saved {
+    color: #21ba45;
+}
+
+body.judge0-dark-mode .judge0-save-status-saving,
+body.judge0-dark-mode .judge0-save-status-unsaved {
+    color: #f2c037;
+}
+
+body.judge0-dark-mode .judge0-save-status-error {
+    color: #ff695e;
+}
+
 #judge0-chat-container {
     display: flex;
     flex-direction: column;

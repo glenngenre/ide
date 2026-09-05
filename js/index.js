@@ -23,7 +23,20 @@ import {
     setFontSizeForEditors,
     registerInlineCompletionProvider,
 } from "./editors.js";
-import { loadState, saveState, debounce } from "./storage.js";
+import {
+    loadDraft,
+    clearDraft,
+    hasDraft,
+    createPersistenceController,
+} from "./storage.js";
+import {
+    downloadFile,
+    getFilenameExtension,
+    normalizeFilename,
+} from "./file_operations.js";
+import { createStatusUI } from "./status_ui.js";
+import { createLayoutConfig } from "./layout_config.js";
+import { createEditorState } from "./editor_state.js";
 
 function getAuthHeaders() {
     const token = getAuthToken();
@@ -32,7 +45,7 @@ function getAuthHeaders() {
 
 let fontSize = 13;
 let layout;
-let currentFileName = "Untitled";
+const editorState = createEditorState();
 
 export let sourceEditor;
 let stdinEditor;
@@ -42,77 +55,14 @@ let $selectLanguage;
 let $compilerOptions;
 let $commandLineArguments;
 let $runBtn;
-let $statusLine;
+let $fileName;
+let statusUI;
+let persistence;
+let applyingState = false;
 
 let timeStart;
 let isRunning = false;
 const AUTOSAVE_INTERVAL_MS = 5000;
-
-const layoutConfig = {
-    settings: {
-        showPopoutIcon: false,
-        reorderEnabled: true,
-    },
-    content: [
-        {
-            type: configuration.get("appOptions.mainLayout"),
-            content: [
-                {
-                    type: "component",
-                    width: 66,
-                    componentName: "source",
-                    id: "source",
-                    title: "Source Code",
-                    isClosable: false,
-                    componentState: { readOnly: false },
-                },
-                {
-                    type: configuration.get("appOptions.assistantLayout"),
-                    title: "AI Assistant and I/O",
-                    content: [
-                        configuration.get("appOptions.showAIAssistant")
-                            ? {
-                                  type: "component",
-                                  height: 66,
-                                  componentName: "ai",
-                                  id: "ai",
-                                  title: "AI Assistant",
-                                  isClosable: false,
-                                  componentState: { readOnly: false },
-                              }
-                            : null,
-                        {
-                            type: configuration.get("appOptions.ioLayout"),
-                            title: "I/O",
-                            content: [
-                                configuration.get("appOptions.showInput")
-                                    ? {
-                                          type: "component",
-                                          componentName: "stdin",
-                                          id: "stdin",
-                                          title: "Input",
-                                          isClosable: false,
-                                          componentState: { readOnly: false },
-                                      }
-                                    : null,
-                                configuration.get("appOptions.showOutput")
-                                    ? {
-                                          type: "component",
-                                          componentName: "stdout",
-                                          id: "stdout",
-                                          title: "Output",
-                                          isClosable: false,
-                                          componentState: { readOnly: true },
-                                      }
-                                    : null,
-                            ].filter(Boolean),
-                        },
-                    ].filter(Boolean),
-                },
-            ],
-        },
-    ],
-};
 
 function showError(title, content) {
     $("#judge0-site-modal #title").html(title);
@@ -165,7 +115,7 @@ function handleResult(data) {
     const time = data.time === null ? "-" : data.time + "s";
     const memory = data.memory === null ? "-" : data.memory + "KB";
 
-    $statusLine.html(
+    statusUI.setExecutionStatus(
         `${status.description}, ${time}, ${memory} (TAT: ${tat}ms)`,
     );
 
@@ -222,7 +172,7 @@ async function run() {
     isRunning = true;
     $runBtn.addClass("loading");
     stdoutEditor.setValue("");
-    $statusLine.html("");
+    statusUI?.setExecutionStatus("");
 
     const stdoutItem = layout.root.getItemsById("stdout")[0];
     stdoutItem.parent.header.parent.setActiveContentItem(stdoutItem);
@@ -260,7 +210,7 @@ async function run() {
         const result = await pollSubmission(
             token,
             (description) => {
-                $statusLine.html(description);
+                statusUI?.setExecutionStatus(description);
             },
             authHeaders,
         );
@@ -270,42 +220,72 @@ async function run() {
     }
 }
 
-function setSourceCodeName(name) {
-    currentFileName = name;
-    $(".lm_title")[0].innerText = name;
+function setSourceCodeName(name, markDirty = true) {
+    editorState.setFileName(name);
+    if ($fileName) {
+        $fileName.val(editorState.fileName);
+    }
+    const title = $(".lm_title")[0];
+    if (title) {
+        title.innerText = editorState.fileName;
+    }
+    if (markDirty && !applyingState) {
+        persistence?.markDirty();
+    }
 }
 
 function getSourceCodeName() {
-    return currentFileName;
+    return editorState.fileName;
 }
 
 async function openFile(content, filename) {
+    if (
+        persistence?.isDirty() &&
+        !window.confirm("Replace the current unsaved work with this file?")
+    ) {
+        return;
+    }
+
+    applyingState = true;
     clear();
     sourceEditor.setValue(content);
-    await selectLanguageForExtension(filename.split(".").pop());
-    setSourceCodeName(filename);
-    persistState();
-}
-
-function saveFile(content, filename) {
-    const blob = new Blob([content], { type: "text/plain" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(link.href);
+    await selectLanguageForExtension(getFilenameExtension(filename));
+    setSourceCodeName(filename, false);
+    applyingState = false;
+    persistence?.markDirty();
 }
 
 async function openAction() {
     document.getElementById("open-file-input").click();
 }
 
-async function saveAction() {
-    persistState();
-    // TODO: Ask where to save file
-    // saveFile(sourceEditor.getValue(), getSourceCodeName());
+function saveAsAction() {
+    const filename = window.prompt("Save source code as:", getSourceCodeName());
+
+    if (filename === null) {
+        return;
+    }
+
+    const trimmedFilename = normalizeFilename(filename);
+    if (!trimmedFilename) {
+        showError("Error", "File name can't be empty!");
+        return;
+    }
+
+    setSourceCodeName(trimmedFilename);
+    persistence?.flush(true);
+    downloadFile(sourceEditor.getValue(), trimmedFilename);
+}
+
+function saveAction() {
+    const filename = normalizeFilename(getSourceCodeName());
+    if (!filename || filename === "Untitled") {
+        saveAsAction();
+        return;
+    }
+
+    persistence?.flush(true);
+    downloadFile(sourceEditor.getValue(), filename);
 }
 
 function setFontSizeForAllEditors(size) {
@@ -348,60 +328,128 @@ async function loadSelectedLanguage(skipSetDefaultSourceCodeName = false) {
         $selectLanguage.find(":selected").attr("language_mode"),
     );
 
-    if (!skipSetDefaultSourceCodeName) {
+    if (
+        !skipSetDefaultSourceCodeName &&
+        (editorState.fileName === "Untitled" ||
+            editorState.fileName.startsWith("Untitled."))
+    ) {
         const selectedText = $selectLanguage.find(":selected").text();
         setSourceCodeName(`Untitled.${selectedText.toLowerCase()}`);
     }
 }
 
-function persistState() {
+function getStateSnapshot() {
     if (!sourceEditor || !stdinEditor || !$selectLanguage) {
-        return;
+        return null;
     }
 
-    saveState({
+    const snapshot = {
         sourceCode: sourceEditor.getValue(),
-        fileName: currentFileName,
+        fileName: editorState.fileName,
         languageId: getSelectedLanguageId(),
         stdin: stdinEditor.getValue(),
         compilerOptions: $compilerOptions.val(),
         commandLineArguments: $commandLineArguments.val(),
-    });
+    };
+    editorState.update(snapshot);
+    return editorState.snapshot();
 }
 
-const persistStateDebounced = debounce(persistState, 500);
-
-function setDefaults() {
-    setFontSizeForAllEditors(fontSize);
-
-    const saved = loadState();
-
-    sourceEditor.setValue(saved.sourceCode ?? DEFAULT_SOURCE);
-    stdinEditor.setValue(saved.stdin ?? DEFAULT_STDIN);
-    $compilerOptions.val(saved.compilerOptions ?? DEFAULT_COMPILER_OPTIONS);
-    $commandLineArguments.val(
-        saved.commandLineArguments ?? DEFAULT_CMD_ARGUMENTS,
-    );
-
-    $statusLine.html("");
-
-    if (saved.languageId) {
-        selectLanguageById(saved.languageId).then(() => {
-            if (saved.fileName) {
-                setSourceCodeName(saved.fileName);
-            }
-        });
-    } else {
-        loadSelectedLanguage();
+function markStateDirty() {
+    if (!applyingState) {
+        persistence?.markDirty();
     }
 }
 
+function persistState() {
+    persistence?.flush(true);
+}
+
+async function setDefaults() {
+    setFontSizeForAllEditors(fontSize);
+
+    const saved = loadDraft();
+    editorState.update({
+        sourceCode: saved.sourceCode ?? editorState.sourceCode,
+        stdin: saved.stdin ?? editorState.stdin,
+        languageId: saved.languageId ?? editorState.languageId,
+        compilerOptions:
+            saved.compilerOptions ?? editorState.compilerOptions,
+        commandLineArguments:
+            saved.commandLineArguments ?? editorState.commandLineArguments,
+        fileName: saved.fileName ?? editorState.fileName,
+    });
+
+    applyingState = true;
+    sourceEditor.setValue(editorState.sourceCode);
+    stdinEditor.setValue(editorState.stdin);
+    $compilerOptions.val(editorState.compilerOptions);
+    $commandLineArguments.val(
+        editorState.commandLineArguments,
+    );
+
+    statusUI?.setExecutionStatus("");
+
+    if (editorState.languageId) {
+        await selectLanguageById(editorState.languageId);
+        if (editorState.fileName) {
+            setSourceCodeName(editorState.fileName, false);
+        }
+    } else {
+        loadSelectedLanguage();
+    }
+    applyingState = false;
+    persistence?.markClean("saved");
+}
+
 function clear() {
+    const previousApplyingState = applyingState;
+    applyingState = true;
     sourceEditor.setValue("");
     stdinEditor.setValue("");
-    $compilerOptions.val("");
-    $commandLineArguments.val("");
-    $statusLine.html("");
+    $compilerOptions.val(DEFAULT_COMPILER_OPTIONS);
+    $commandLineArguments.val(DEFAULT_CMD_ARGUMENTS);
+    statusUI?.setExecutionStatus("");
+    setSourceCodeName("Untitled", false);
+    applyingState = previousApplyingState;
+}
+
+async function restoreDraftAction() {
+    if (!hasDraft()) {
+        showError("Draft", "There is no saved local draft to restore.");
+        return;
+    }
+
+    if (
+        persistence?.isDirty() &&
+        !window.confirm("Replace the current unsaved work with the saved draft?")
+    ) {
+        return;
+    }
+
+    await setDefaults();
+}
+
+function clearDraftAction() {
+    if (!hasDraft() || !sourceEditor) {
+        return;
+    }
+
+    if (
+        !window.confirm(
+            "Clear the saved local draft? This cannot be undone.",
+        )
+    ) {
+        return;
+    }
+
+    clearDraft();
+    clear();
+    sourceEditor.setValue(DEFAULT_SOURCE);
+    stdinEditor.setValue(DEFAULT_STDIN);
+    $compilerOptions.val(DEFAULT_COMPILER_OPTIONS);
+    $commandLineArguments.val(DEFAULT_CMD_ARGUMENTS);
+    persistence?.markClean("saved");
 }
 
 function refreshSiteContentHeight() {
@@ -434,8 +482,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     $selectLanguage.change(function (event, data) {
         const skipSetDefaultSourceCodeName =
             data && data.skipSetDefaultSourceCodeName;
-        loadSelectedLanguage(skipSetDefaultSourceCodeName);
-        persistState();
+        loadSelectedLanguage(skipSetDefaultSourceCodeName).then(markStateDirty);
     });
 
     await loadLanguagesIntoDropdown();
@@ -462,7 +509,21 @@ document.addEventListener("DOMContentLoaded", async function () {
         reader.readAsText(selectedFile);
     });
 
-    $statusLine = $("#judge0-status-line");
+    $fileName = $("#judge0-file-name");
+    statusUI = createStatusUI({
+        saveStatusElement: document.getElementById("judge0-save-status"),
+        executionStatusElement: document.getElementById("judge0-status-line"),
+    });
+    persistence = createPersistenceController({
+        getSnapshot: getStateSnapshot,
+        onStatusChange: statusUI.setSaveStatus,
+        safetyIntervalMs: AUTOSAVE_INTERVAL_MS,
+    });
+    statusUI.setSaveStatus("saved");
+
+    $fileName.on("input", function () {
+        setSourceCodeName($fileName.val());
+    });
 
     $(document).on("keydown", "body", function (e) {
         if (!(e.metaKey || e.ctrlKey)) {
@@ -474,8 +535,13 @@ document.addEventListener("DOMContentLoaded", async function () {
                 run();
                 break;
             case "s":
+            case "S":
                 e.preventDefault();
-                saveAction();
+                if (e.shiftKey) {
+                    saveAsAction();
+                } else {
+                    saveAction();
+                }
                 break;
             case "o":
                 e.preventDefault();
@@ -502,7 +568,10 @@ document.addEventListener("DOMContentLoaded", async function () {
     });
 
     require(["vs/editor/editor.main"], function () {
-        layout = new GoldenLayout(layoutConfig, $("#judge0-site-content"));
+        layout = new GoldenLayout(
+            createLayoutConfig(configuration),
+            $("#judge0-site-content"),
+        );
 
         layout.registerComponent("source", function (container, state) {
             sourceEditor = createEditor(container.getElement()[0], {
@@ -515,7 +584,7 @@ document.addEventListener("DOMContentLoaded", async function () {
                 monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter,
                 run,
             );
-            sourceEditor.onDidChangeModelContent(persistStateDebounced);
+            sourceEditor.onDidChangeModelContent(markStateDirty);
 
             registerInlineCompletionProvider({
                 getAuthToken,
@@ -536,7 +605,7 @@ document.addEventListener("DOMContentLoaded", async function () {
                 readOnly: state.readOnly,
                 minimap: false,
             });
-            stdinEditor.onDidChangeModelContent(persistStateDebounced);
+            stdinEditor.onDidChangeModelContent(markStateDirty);
         });
 
         layout.registerComponent("stdout", function (container, state) {
@@ -553,11 +622,11 @@ document.addEventListener("DOMContentLoaded", async function () {
                 .appendChild(document.getElementById("judge0-chat-container"));
         });
 
-        layout.on("initialised", function () {
-            setDefaults();
+        layout.on("initialised", async function () {
+            await setDefaults();
             refreshLayoutSize();
             $selectLanguage.prop("disabled", false);
-            window.setInterval(persistState, AUTOSAVE_INTERVAL_MS);
+            persistence.start();
             window.top.postMessage({ event: "initialised" }, "*");
         });
 
@@ -583,9 +652,22 @@ document.addEventListener("DOMContentLoaded", async function () {
     document
         .getElementById("judge0-save-btn")
         .addEventListener("click", saveAction);
+    document
+        .getElementById("judge0-save-as-btn")
+        .addEventListener("click", saveAsAction);
+    document
+        .getElementById("judge0-restore-draft-btn")
+        .addEventListener("click", restoreDraftAction);
+    document
+        .getElementById("judge0-clear-draft-btn")
+        .addEventListener("click", clearDraftAction);
 
-    $compilerOptions.on("change", persistStateDebounced);
-    $commandLineArguments.on("change", persistStateDebounced);
+    $compilerOptions.on("change", markStateDirty);
+    $commandLineArguments.on("change", markStateDirty);
+
+    window.addEventListener("beforeunload", () => {
+        persistence?.flush();
+    });
 
     document
         .getElementById("judge0-chat-form")

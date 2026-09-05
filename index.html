@@ -185,7 +185,44 @@
                         <span class="description">+S</span>
                         <span class="text"><i class="save icon"></i>Save</span>
                     </div>
+                    <div id="judge0-save-as-btn" class="item">
+                        <span class="text"
+                            ><i class="save outline icon"></i>Save As...</span
+                        >
+                    </div>
+                    <div class="divider"></div>
+                    <div id="judge0-restore-draft-btn" class="item">
+                        <span class="text"
+                            ><i class="history icon"></i>Restore Draft</span
+                        >
+                    </div>
+                    <div id="judge0-clear-draft-btn" class="item">
+                        <span class="text"
+                            ><i class="trash alternate outline icon"></i
+                            >Clear Draft</span
+                        >
+                    </div>
                 </div>
+            </div>
+            <div class="item judge0-showFileMenu judge0-file-name-item">
+                <div class="ui transparent input">
+                    <i class="file outline icon"></i>
+                    <input
+                        id="judge0-file-name"
+                        type="text"
+                        value="Untitled"
+                        aria-label="Filename"
+                        title="Filename"
+                    />
+                </div>
+            </div>
+            <div
+                id="judge0-save-status"
+                class="item judge0-save-status judge0-showFileMenu"
+                role="status"
+                aria-live="polite"
+            >
+                Saved
             </div>
             <div class="item judge0-showSelectLanguage">
                 <select
