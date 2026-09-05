@@ -53,25 +53,25 @@ export function getEditorLanguageMode(languageName) {
 }
 
 export const EXTENSIONS_TABLE = {
-    asm: { language_id: 45 },      // Assembly (NASM 2.14.02)
-    c: { language_id: 103 },       // C (GCC 14.1.0)
-    cpp: { language_id: 105 },     // C++ (GCC 14.1.0)
-    cs: { language_id: 29 },       // C# (.NET Core SDK 7.0.400)
-    go: { language_id: 95 },       // Go (1.18.5)
-    java: { language_id: 91 },     // Java (JDK 17.0.6)
-    js: { language_id: 102 },      // JavaScript (Node.js 22.08.0)
-    lua: { language_id: 64 },      // Lua (5.3.5)
-    pas: { language_id: 67 },      // Pascal (FPC 3.0.4)
-    php: { language_id: 98 },      // PHP (8.3.11)
-    py: { language_id: 25 },       // Python for ML (3.11.2)
-    r: { language_id: 99 },        // R (4.4.1)
-    rb: { language_id: 72 },       // Ruby (2.7.0)
-    rs: { language_id: 73 },       // Rust (1.40.0)
-    scala: { language_id: 81 },    // Scala (2.13.2)
-    sh: { language_id: 46 },       // Bash (5.0.0)
-    swift: { language_id: 83 },    // Swift (5.2.3)
-    ts: { language_id: 101 },      // TypeScript (5.6.2)
-    txt: { language_id: 43 },      // Plain Text
+    asm:   { language_id: 45 },  // Assembly (NASM 2.14.02)
+    c:     { language_id: 50 },  // C (GCC 9.2.0)
+    cpp:   { language_id: 54 },  // C++ (GCC 9.2.0)
+    cs:    { language_id: 51 },  // C# (Mono 6.6.0.161)
+    go:    { language_id: 60 },  // Go (1.13.5)
+    java:  { language_id: 62 },  // Java (OpenJDK 13.0.1)
+    js:    { language_id: 63 },  // JavaScript (Node.js 12.14.0)
+    lua:   { language_id: 64 },  // Lua (5.3.5)
+    pas:   { language_id: 67 },  // Pascal (FPC 3.0.4)
+    php:   { language_id: 68 },  // PHP (7.4.1)
+    py:    { language_id: 71 },  // Python (3.8.1)
+    r:     { language_id: 80 },  // R (4.0.0)
+    rb:    { language_id: 72 },  // Ruby (2.7.0)
+    rs:    { language_id: 73 },  // Rust (1.40.0)
+    scala: { language_id: 81 },  // Scala (2.13.2)
+    sh:    { language_id: 46 },  // Bash (5.0.0)
+    swift: { language_id: 83 },  // Swift (5.2.3)
+    ts:    { language_id: 74 },  // TypeScript (3.7.4)
+    txt:   { language_id: 43 },  // Plain Text
 };
 
 export const DEFAULT_LANGUAGE_FOR_UNKNOWN_EXTENSION = {
