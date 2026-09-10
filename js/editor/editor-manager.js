@@ -1,10 +1,13 @@
-export function createEditor(container, { language, readOnly, minimap }) {
+import * as monaco from "./monaco.js";
+
+export function createEditor(container, { language, readOnly, minimap, placeholder }) {
     return monaco.editor.create(container, {
         automaticLayout: true,
         scrollBeyondLastLine: !!minimap,
         readOnly: !!readOnly,
         language,
         minimap: { enabled: !!minimap },
+        placeholder,
     });
 }
 
@@ -40,6 +43,7 @@ export function registerEditorComponents(layout, {
             language: "plaintext",
             readOnly: state.readOnly,
             minimap: false,
+            placeholder: "Input for your program (stdin)",
         });
         stdinEditor.onDidChangeModelContent(onStateChange);
     });
@@ -49,6 +53,7 @@ export function registerEditorComponents(layout, {
             language: "plaintext",
             readOnly: state.readOnly,
             minimap: false,
+            placeholder: "Run your code to see the output here",
         });
     });
 

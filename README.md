@@ -1,39 +1,67 @@
-# Judge0 IDE
-[![Judge0 IDE Screenshot](./.github/screenshot.png)](https://ide.judge0.com)
+# SKWTR IDE
+[![SKWTR IDE Screenshot](./.github/screenshot.png)](https://github.com/glenngenre/ide)
 
-[![License](https://img.shields.io/github/license/judge0/ide?color=2185d0&style=flat-square)](https://github.com/judge0/ide/blob/master/LICENSE)
-[![Release](https://img.shields.io/github/v/release/judge0/ide?color=2185d0&style=flat-square)](https://github.com/judge0/ide/releases)
-[![Stars](https://img.shields.io/github/stars/judge0/ide?color=2185d0&style=flat-square)](https://github.com/judge0/ide/stargazers)
-
-<a href="https://www.producthunt.com/posts/judge0-ide" target="_blank"><img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=179885&theme=light" alt="" height="43px" /></a>
+[![License](https://img.shields.io/github/license/glenngenre/ide?color=2185d0&style=flat-square)](https://github.com/glenngenre/ide/blob/master/LICENSE)
 
 ## About
-[**Judge0 IDE**](https://ide.judge0.com) is a free and open-source online code editor that allows you to write and execute code from a rich set of languages. It's perfect for anybody who just wants to quickly write and run some code without opening a full-featured IDE on their computer. Moreover, it is also useful for teaching and learning or just trying out a new language.
+**SKWTR IDE** is a browser-based code editor for writing and running code in a wide range of languages, with an AI assistant built in. It started as a fork of [Judge0 IDE](https://github.com/judge0/ide) and has since been substantially rewritten: the front end is reorganized into ES modules, code execution and AI features go through a dedicated authenticated backend, and the editor keeps your work safe with local draft autosave.
 
-Judge0 IDE is using [**Judge0**](https://ce.judge0.com) for executing the user's source code.
+Code execution is still powered by [Judge0](https://judge0.com) under the hood, via the SKWTR API.
 
-Visit https://ide.judge0.com, and enjoy happy coding. :)
+## Features
+- **Run code in many languages** – the language list is loaded from the backend at startup; the Monaco editor switches syntax mode automatically. Supports stdin, compiler options, and command-line arguments.
+- **AI assistant** – a chat panel that sees your current source code, plus optional inline (ghost-text) completions in the editor. Toggle inline suggestions and choose a model from the assistant panel.
+- **Draft autosave** – your source, stdin, language, options, and file name are saved to `localStorage` (debounced, plus a periodic safety save). A status indicator shows *unsaved / saving / saved*, and you can **Restore Draft** or **Clear Draft** from the File menu.
+- **Open / Save / Save As** – open local files (language is inferred from the extension) and download your source back to disk.
+- **Authentication** – a login modal gates the IDE; the JWT is stored locally and sent with every API request.
+- **Configurable layout and styles** – `default`, `minimal`, and `standalone` styles, light/dark/system theme, and fine-grained UI toggles via query parameters (e.g. `?judge0.style=minimal&judge0.theme=dark&judge0.styleOptions.showNavigation=false`).
+- **Embeddable** – control the IDE from a parent page through `postMessage` (`get`, `set`, `run`). See [`embed/`](./embed/README.md).
+- **PWA / offline shell** – includes a `manifest.json` and service worker.
 
-## Community
+### Keyboard shortcuts
+| Shortcut | Action |
+| --- | --- |
+| `Ctrl/⌘ + Enter` | Run |
+| `Ctrl/⌘ + S` | Save |
+| `Ctrl/⌘ + Shift + S` | Save As |
+| `Ctrl/⌘ + O` | Open file |
+| `Ctrl/⌘ + +` / `-` / `0` | Increase / decrease / reset font size |
+| `` Ctrl/⌘ + ` `` | Focus source editor |
 
-Join our community - get help, share feedback, and contribute. Whether you're integrating Judge0, building with the API, or reporting bugs, your participation helps improve the project for everyone.
 
-* [Visit Judge0 website](https://judge0.com)
-* [Read Judge0 blog](https://blog.judge0.com)
-* [Subscribe to Judge0 newsletter](https://newsletter.judge0.com)
-* [Join Judge0 Discord server](https://discord.judge0.com)
-* [Follow Judge0 on X](https://x.com/Judge0HQ)
-* [Follow Judge0 on LinkedIn](https://www.linkedin.com/company/judge0)
-* [Read Judge0 research paper](https://paper.judge0.com)
-* [Watch Judge0 asciicasts](https://asciinema.org/~hermanzdosilovic)
-* [Report an issue](https://github.com/judge0/judge0/issues/new)
-* [Contact Judge0 team via email](mailto:contact@judge0.com)
-* [Schedule a meeting with Judge0 team](https://meet.judge0.com)
+## Development
+Requires Node.js 20+.
 
-## Author and Contributors
-Judge0 IDE was created by [Herman Zvonimir Došilović](https://github.com/hermanzdosilovic).
+```sh
+npm install
+npm run dev       # dev server with HMR at http://localhost:5173
+npm run build     # production build into dist/
+npm run preview   # serve the production build locally
+```
 
-Thanks a lot to all [contributors](https://github.com/judge0/ide/graphs/contributors) for their contributions to this project.
+Monaco is bundled from npm via Vite. [`js/editor/monaco.js`](./js/editor/monaco.js) loads the core editor, all editor features, and only the syntax definitions the IDE maps languages to, so the CSS/HTML/JSON/TypeScript language services (and their workers) stay out of the bundle. Static files in `public/` (favicons, images, manifest, service worker, SQLite sample data) are served as-is from the site root. jQuery, Semantic UI, GoldenLayout, and KaTeX are still loaded from a CDN in `index.html`.
+
+### Docker
+The `DockerFile` is a multi-stage build: Node builds `dist/`, nginx serves it.
+
+```sh
+docker build -f DockerFile -t skwtr-ide .
+docker run -p 8080:80 skwtr-ide
+```
+
+### Backend
+The IDE expects an API at `https://api.apps.skwtr.com/ide/v1` providing:
+
+- `POST /auth/login` – returns `{ token, role, username }`
+- `GET  /code/languages`, `POST /code/run`, `GET /code/status/:token` – Judge0-compatible execution
+- `POST /ai/chat`, `POST /ai/complete` – AI chat and inline completions
+
+To point the front end at a different backend, update the base URL in [`js/constants.js`](./js/constants.js), [`js/auth.js`](./js/auth.js), and [`js/integrations/ai.js`](./js/integrations/ai.js).
+
+## Credits
+SKWTR IDE is a heavily modified fork of [**Judge0 IDE**](https://github.com/judge0/ide), created by [Herman Zvonimir Došilović](https://github.com/hermanzdosilovic) and the [Judge0 contributors](https://github.com/judge0/ide/graphs/contributors). Code execution is provided by [Judge0](https://judge0.com). Thank you for building and open-sourcing the foundation this project stands on.
+
+Rewrite and ongoing development by [Glenn Genre](https://github.com/glenngenre).
 
 ## License
-Judge0 IDE is licensed under the [MIT License](https://github.com/judge0/ide/blob/master/LICENSE).
+SKWTR IDE is licensed under the [MIT License](./LICENSE), the same license as the original Judge0 IDE.

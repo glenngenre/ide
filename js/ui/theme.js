@@ -1,5 +1,6 @@
 "use strict";
 import configuration from "../configuration.js";
+import * as monaco from "../editor/monaco.js";
 
 const theme = {
     set(name, save = true) {
@@ -7,7 +8,7 @@ const theme = {
         const resolvedTheme = resolvedName === "system" ? theme.getSystemTheme() : (resolvedName === "reverse-system" ? theme.getReverseSystemTheme() : resolvedName);
         const isLight = resolvedTheme === "light";
 
-        document.body.style.background = `url("./images/logo_${isLight ? "white" : "black"}.svg") center center / 33% no-repeat ${isLight ? "#e0e1e2" : "#1b1c1d"} `;
+        document.body.style.background = `url("/images/logo_${isLight ? "white" : "black"}.svg") center center / 33% no-repeat ${isLight ? "#e0e1e2" : "#1b1c1d"} `;
 
         if (isLight) {
             document.body.classList.remove("judge0-dark-mode");
@@ -102,9 +103,7 @@ const theme = {
 export default theme;
 
 document.addEventListener("DOMContentLoaded", function () {
-    require(["vs/editor/editor.main"], function () {
-        theme.set(configuration.get("theme"), false);
-    });
+    theme.set(configuration.get("theme"), false);
     document.getElementById("judge0-theme-toggle-btn").addEventListener("click", theme.toggle);
 });
 

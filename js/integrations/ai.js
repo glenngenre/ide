@@ -40,7 +40,7 @@ export async function sendChatMessage(messages, model, stream = false) {
     }
 }
 
-export async function getInlineCompletion(textBeforeCursor, textAfterCursor, model) {
+export async function getInlineCompletion(textBeforeCursor, textAfterCursor, model, signal) {
     const token = getAuthToken();
     if (!token) return null;
 
@@ -57,7 +57,8 @@ export async function getInlineCompletion(textBeforeCursor, textAfterCursor, mod
                 suffix: textAfterCursor,
                 stream: false,
                 options: { temperature: 0.1, num_predict: 64 }
-            })
+            }),
+            signal,
         });
 
         if (response.status === 401) {
@@ -73,6 +74,8 @@ export async function getInlineCompletion(textBeforeCursor, textAfterCursor, mod
         const data = await response.json();
         return data?.response || null;
     } catch (error) {
+        // Superseded by a newer keystroke; not an error worth logging.
+        if (error?.name === 'AbortError') return null;
         console.error('Inline completion error:', error);
         return null;
     }

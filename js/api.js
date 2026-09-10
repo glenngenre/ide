@@ -75,7 +75,7 @@ export async function getSqliteAdditionalFiles() {
     }
     let response;
     try {
-        response = await fetch("./data/additional_files_zip_base64.txt");
+        response = await fetch("/data/additional_files_zip_base64.txt");
     } catch (err) {
         throw networkError(err);
     }
