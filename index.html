@@ -12,20 +12,6 @@
             referrerpolicy="no-referrer"
         ></script>
 
-        <!-- Markdown & sanitization -->
-        <script
-            src="https://cdnjs.cloudflare.com/ajax/libs/marked/15.0.6/marked.min.js"
-            integrity="sha512-rvRITpPeEKe4hV9M8XntuXX6nuohzqdR5O3W6nhjTLwkrx0ZgBQuaK4fv5DdOWzs2IaXsGt5h0+nyp9pEuoTXg=="
-            crossorigin="anonymous"
-            referrerpolicy="no-referrer"
-        ></script>
-        <script
-            src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.2.3/purify.min.js"
-            integrity="sha512-Ll+TuDvrWDNNRnFFIM8dOiw7Go7dsHyxRp4RutiIFW/wm3DgDmCnRZow6AqbXnCbpWu93yM1O34q+4ggzGeXVA=="
-            crossorigin="anonymous"
-            referrerpolicy="no-referrer"
-        ></script>
-
         <!-- KaTeX (math rendering) -->
         <script
             src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"
@@ -47,32 +33,12 @@
             referrerpolicy="no-referrer"
         />
 
-        <!-- Monaco Editor -->
-        <script>
-            var require = {
-                paths: {
-                    vs: "./vendor/monaco-editor-0.44.0/min/vs",
-                },
-            };
-        </script>
-        <script src="./vendor/monaco-editor-0.44.0/min/vs/loader.js"></script>
-        <script src="./vendor/monaco-editor-0.44.0/min/vs/editor/editor.main.nls.js"></script>
-        <script src="./vendor/monaco-editor-0.44.0/min/vs/editor/editor.main.js"></script>
-
         <!-- Golden Layout -->
-        <script>
-            window.__amdDefine = window.define;
-            window.define = undefined;
-        </script>
         <script
             src="https://cdnjs.cloudflare.com/ajax/libs/golden-layout/1.5.9/goldenlayout.min.js"
             integrity="sha256-NhJAZDfGgv4PiB+GVlSrPdh3uc75XXYSM4su8hgTchI="
             crossorigin="anonymous"
         ></script>
-        <script>
-            window.define = window.__amdDefine;
-            delete window.__amdDefine;
-        </script>
         <link
             rel="stylesheet"
             href="https://cdnjs.cloudflare.com/ajax/libs/golden-layout/1.5.9/css/goldenlayout-base.css"
@@ -122,11 +88,11 @@
         ></script>
 
         <!-- Custom CSS -->
-        <link type="text/css" rel="stylesheet" href="css/ide.css" />
-        <link type="text/css" rel="stylesheet" href="css/semantic.css" />
-        <link type="text/css" rel="stylesheet" href="css/site.css" />
+        <link type="text/css" rel="stylesheet" href="/css/ide.css" />
+        <link type="text/css" rel="stylesheet" href="/css/semantic.css" />
+        <link type="text/css" rel="stylesheet" href="/css/site.css" />
 
-        <script type="module" src="js/app.js"></script>
+        <script type="module" src="/js/app.js"></script>
 
         <title>SKWTR IDE</title>
 
@@ -144,7 +110,7 @@
             sizes="180x180"
             href="/favicons/favicon-180x180.png"
         />
-        <meta name="apple-mobile-web-app-title" content="Judge0 IDE" />
+        <meta name="apple-mobile-web-app-title" content="SKWTR IDE" />
         <link rel="manifest" href="/manifest.json" />
         <meta name="msapplication-TileColor" content="#ffffff" />
         <meta name="theme-color" content="#ffffff" />
@@ -163,7 +129,7 @@
             >
                 <img
                     id="judge0-logo"
-                    src="./images/icon_var2_rounded_512.png"
+                    src="/images/icon_var2_rounded_512.png"
                 />
             </a>
             <div class="ui simple dropdown item judge0-showFileMenu">
@@ -332,7 +298,7 @@
                 <a
                     id="report-problem-btn"
                     class="ui labeled icon red button"
-                    href="https://github.com/judge0/ide/issues/new?title=New+bug+report&body=Describe+the+problem."
+                    href="https://github.com/glenngenre/ide/issues/new?title=New+bug+report&body=Describe+the+problem."
                     target="_blank"
                 >
                     <i class="flag icon"></i>
@@ -407,18 +373,18 @@
         ></div>
 
         <!-- Copyright -->
-        <a
-            href="https://judge0.com"
-            target="_blank"
-            class="ui bottom center attached mini label judge0-showCopyright"
-            >© 2016-2026 Judge0 d.o.o. – All Rights Reserved. • A Croatian 🇭🇷
-            company</a
-        >
+        <div class="ui bottom center attached mini label judge0-showCopyright">
+            © 2026
+            <a href="https://github.com/glenngenre/ide" target="_blank">SKWTR IDE</a>
+            • Based on
+            <a href="https://github.com/judge0/ide" target="_blank">Judge0 IDE</a>
+            by Judge0 d.o.o. • MIT License
+        </div>
 
         <script>
             if ("serviceWorker" in navigator) {
                 navigator.serviceWorker
-                    .register("sw.js")
+                    .register("/sw.js")
                     .then(() => console.log("Service Worker Registered"));
             }
         </script>

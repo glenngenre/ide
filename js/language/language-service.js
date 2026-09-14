@@ -5,6 +5,7 @@ import {
     getEditorLanguageMode,
     getLanguageForExtension,
 } from "../constants.js";
+import * as monaco from "../editor/monaco.js";
 
 export function getAuthHeaders(token) {
     return token ? { Authorization: "Bearer " + token } : {};

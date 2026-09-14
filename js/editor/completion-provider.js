@@ -1,3 +1,40 @@
+import * as monaco from "./monaco.js";
+
+const DEBOUNCE_MS = 400;
+const CACHE_SIZE = 20;
+
+function waitUnlessCancelled(ms, token) {
+    return new Promise((resolve) => {
+        if (token.isCancellationRequested) {
+            resolve(false);
+            return;
+        }
+        const timer = setTimeout(() => {
+            listener.dispose();
+            resolve(true);
+        }, ms);
+        const listener = token.onCancellationRequested(() => {
+            clearTimeout(timer);
+            resolve(false);
+        });
+    });
+}
+
+function createCompletionCache(maxSize) {
+    const entries = new Map();
+    return {
+        get(key) {
+            return entries.get(key);
+        },
+        set(key, value) {
+            if (entries.size >= maxSize) {
+                entries.delete(entries.keys().next().value);
+            }
+            entries.set(key, value);
+        },
+    };
+}
+
 function extractCompletionText(aiResponse) {
     let value = "";
 
@@ -33,13 +70,19 @@ export function registerInlineCompletionProvider(deps) {
         getSelectedChatModel,
     } = deps;
 
+    const cache = createCompletionCache(CACHE_SIZE);
+
     return monaco.languages.registerInlineCompletionsProvider("*", {
-        provideInlineCompletions: async (model, position) => {
+        provideInlineCompletions: async (model, position, _context, token) => {
             if (
                 !getAuthToken() ||
                 !isInlineSuggestionsEnabled() ||
                 !isAIAssistantEnabled()
             ) {
+                return;
+            }
+
+            if (!(await waitUnlessCancelled(DEBOUNCE_MS, token))) {
                 return;
             }
 
@@ -56,19 +99,34 @@ export function registerInlineCompletionProvider(deps) {
                 endColumn: model.getLineMaxColumn(model.getLineCount()),
             });
 
-            let aiResponse;
-            try {
-                aiResponse = await getInlineCompletion(
-                    textBeforeCursor,
-                    textAfterCursor,
-                    getSelectedChatModel(),
-                );
-            } catch (err) {
-                console.warn("Judge0 IDE: inline completion request failed.", err);
-                return;
+            const chatModel = getSelectedChatModel();
+            const cacheKey = `${chatModel}\u0000${textBeforeCursor}\u0000${textAfterCursor}`;
+            let text = cache.get(cacheKey);
+
+            if (text === undefined) {
+                const abort = new AbortController();
+                const cancelListener = token.onCancellationRequested(() => abort.abort());
+                let aiResponse;
+                try {
+                    aiResponse = await getInlineCompletion(
+                        textBeforeCursor,
+                        textAfterCursor,
+                        chatModel,
+                        abort.signal,
+                    );
+                } catch (err) {
+                    console.warn("Judge0 IDE: inline completion request failed.", err);
+                    return;
+                } finally {
+                    cancelListener.dispose();
+                }
+                if (token.isCancellationRequested) {
+                    return;
+                }
+                text = extractCompletionText(aiResponse);
+                cache.set(cacheKey, text);
             }
 
-            const text = extractCompletionText(aiResponse);
             if (!text) {
                 return;
             }

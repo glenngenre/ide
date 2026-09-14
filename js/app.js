@@ -1,5 +1,7 @@
 import configuration from "./configuration.js";
 import "./ui/theme.js";
+import { marked } from "marked";
+import DOMPurify from "dompurify";
 import { requireAuthentication, getAuthToken, initAuth } from "./auth.js";
 import { sendChatMessage, getInlineCompletion } from "./integrations/ai.js";
 import {

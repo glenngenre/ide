@@ -1,3 +1,4 @@
+import DOMPurify from "dompurify";
 import { Judge0Error } from "../api.js";
 
 export function createErrorModal() {
@@ -15,7 +16,7 @@ export function createErrorModal() {
 
         $("#report-problem-btn").attr(
             "href",
-            `https://github.com/judge0/ide/issues/new?title=${reportTitle}&body=${reportBody}`,
+            `https://github.com/glenngenre/ide/issues/new?title=${reportTitle}&body=${reportBody}`,
         );
         $("#judge0-site-modal").modal("show");
     }
