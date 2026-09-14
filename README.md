@@ -14,6 +14,7 @@ Code execution is still powered by [Judge0](https://judge0.com) under the hood, 
 - **Draft autosave** – your source, stdin, language, options, and file name are saved to `localStorage` (debounced, plus a periodic safety save). A status indicator shows *unsaved / saving / saved*, and you can **Restore Draft** or **Clear Draft** from the File menu.
 - **Open / Save / Save As** – open local files (language is inferred from the extension) and download your source back to disk.
 - **Authentication** – a login modal gates the IDE; the JWT is stored locally and sent with every API request.
+- **Daily challenges** – a separate page at [`/challenges/`](./challenges/index.html) shows today's coding challenge (description, difficulty, topic, function signature, test cases) and seeds the editor with the challenge's starting code for each supported language. **Run Tests** submits the solution to the backend, which wraps it in a per-language harness, calls the function for every test case, and returns per-case verdicts (returned value, your stdout, errors); a passing run marks the challenge solved. **Run Custom** calls the function with arguments you supply as JSON. Solutions are auto-saved locally per challenge and language.
 - **Configurable layout and styles** – `default`, `minimal`, and `standalone` styles, light/dark/system theme, and fine-grained UI toggles via query parameters (e.g. `?judge0.style=minimal&judge0.theme=dark&judge0.styleOptions.showNavigation=false`).
 - **Embeddable** – control the IDE from a parent page through `postMessage` (`get`, `set`, `run`). See [`embed/`](./embed/README.md).
 - **PWA / offline shell** – includes a `manifest.json` and service worker.
@@ -55,6 +56,7 @@ The IDE expects an API at `https://api.apps.skwtr.com/ide/v1` providing:
 - `POST /auth/login` – returns `{ token, role, username }`
 - `GET  /code/languages`, `POST /code/run`, `GET /code/status/:token` – Judge0-compatible execution
 - `POST /ai/chat`, `POST /ai/complete` – AI chat and inline completions
+- `GET  /challenges/daily`, `POST /challenges/:id/submit` – daily challenge and solution judging (contract in [`docs/challenge-submit-contract.md`](./docs/challenge-submit-contract.md))
 
 To point the front end at a different backend, update the base URL in [`js/constants.js`](./js/constants.js), [`js/auth.js`](./js/auth.js), and [`js/integrations/ai.js`](./js/integrations/ai.js).
 

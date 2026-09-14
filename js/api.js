@@ -27,7 +27,7 @@ export class Judge0Error extends Error {
     }
 }
 
-async function toJudge0Error(response) {
+export async function toJudge0Error(response) {
     let body = null;
     try {
         body = await response.json();

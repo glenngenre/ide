@@ -91,10 +91,11 @@
         <link type="text/css" rel="stylesheet" href="/css/ide.css" />
         <link type="text/css" rel="stylesheet" href="/css/semantic.css" />
         <link type="text/css" rel="stylesheet" href="/css/site.css" />
+        <link type="text/css" rel="stylesheet" href="/css/challenges.css" />
 
-        <script type="module" src="/js/app.js"></script>
+        <script type="module" src="/js/challenges.js"></script>
 
-        <title>SKWTR IDE</title>
+        <title>Challenges · SKWTR IDE</title>
 
         <!-- Favicons -->
         <link rel="shortcut icon" href="/favicons/favicon.ico" />
@@ -123,119 +124,77 @@
         >
             <a
                 id="judge0-header"
-                href="#"
-                target="_blank"
+                href="/"
                 class="header item judge0-showLogo"
+                title="Back to the IDE"
             >
                 <img
                     id="judge0-logo"
                     src="/images/icon_var2_rounded_512.png"
                 />
             </a>
-            <div class="ui simple dropdown item judge0-showFileMenu">
-                <span class="text">File</span>
-                <i class="dropdown icon"></i>
-                <div class="menu judge0-file-menu">
-                    <div id="judge0-open-file-btn" class="item">
-                        <span class="description">+O</span>
-                        <span class="text"
-                            ><i class="file icon"></i>Open File...</span
-                        >
-                        <input
-                            type="file"
-                            id="open-file-input"
-                            style="display: none"
-                        />
-                    </div>
-                    <div id="judge0-save-btn" class="item">
-                        <span class="description">+S</span>
-                        <span class="text"><i class="save icon"></i>Save</span>
-                    </div>
-                    <div id="judge0-save-as-btn" class="item">
-                        <span class="text"
-                            ><i class="save outline icon"></i>Save As...</span
-                        >
-                    </div>
-                    <div class="divider"></div>
-                    <div id="judge0-restore-draft-btn" class="item">
-                        <span class="text"
-                            ><i class="history icon"></i>Restore Draft</span
-                        >
-                    </div>
-                    <div id="judge0-clear-draft-btn" class="item">
-                        <span class="text"
-                            ><i class="trash alternate outline icon"></i
-                            >Clear Draft</span
-                        >
-                    </div>
-                </div>
+            <a href="/" class="item" data-content="Back to the IDE">
+                <i class="code icon"></i>
+                IDE
+            </a>
+            <div class="item skwtr-nav-title">
+                <i class="trophy icon"></i>
+                Daily Challenge
             </div>
-            <div class="item judge0-showFileMenu judge0-file-name-item">
-                <div class="ui transparent input">
-                    <i class="file outline icon"></i>
-                    <input
-                        id="judge0-file-name"
-                        type="text"
-                        value="Untitled"
-                        aria-label="Filename"
-                        title="Filename"
-                    />
-                </div>
-            </div>
-            <div
-                id="judge0-save-status"
-                class="item judge0-save-status judge0-showFileMenu"
-                role="status"
-                aria-live="polite"
-            >
-                Saved
+            <div id="skwtr-challenge-select-item" class="item judge0-hidden">
+                <select
+                    id="skwtr-challenge-select"
+                    class="ui selection dropdown"
+                    aria-label="Challenge"
+                ></select>
             </div>
             <div class="item judge0-showSelectLanguage">
                 <select
                     id="select-language"
                     class="ui search selection dropdown"
+                    aria-label="Language"
                 ></select>
-            </div>
-            <div class="item judge0-showCompilerOptions">
-                <div class="ui left icon transparent input">
-                    <i class="flag icon"></i>
-                    <input
-                        id="compiler-options"
-                        type="text"
-                        placeholder="Compiler options"
-                    />
-                </div>
-            </div>
-            <div class="item judge0-showCommandLineArguments">
-                <div class="ui left icon transparent input">
-                    <i class="terminal icon"></i>
-                    <input
-                        id="command-line-arguments"
-                        type="text"
-                        placeholder="Command line arguments"
-                    />
-                </div>
             </div>
             <div class="item judge0-showRunButton">
                 <button
-                    id="run-btn"
+                    id="skwtr-run-tests-btn"
                     class="ui primary labeled icon button"
                     data-content="+↵"
                 >
+                    <i class="tasks icon"></i>
+                    Run Tests
+                </button>
+            </div>
+            <div class="item">
+                <button
+                    id="skwtr-run-custom-btn"
+                    class="ui labeled icon button"
+                    data-content="Call your function with the arguments in the Custom Input tab"
+                >
                     <i class="play icon"></i>
-                    Run Code
+                    Run Custom
+                </button>
+            </div>
+            <div class="item">
+                <button
+                    id="skwtr-reset-code-btn"
+                    class="ui basic icon button"
+                    data-content="Reset to the challenge's starting code"
+                    aria-label="Reset to starting code"
+                >
+                    <i class="undo icon"></i>
                 </button>
             </div>
 
             <div class="right menu">
-                <a
-                    href="/challenges/"
-                    class="item judge0-showChallengesLink"
-                    data-content="Daily coding challenge"
+                <div
+                    id="judge0-save-status"
+                    class="item judge0-save-status"
+                    role="status"
+                    aria-live="polite"
                 >
-                    <i class="trophy icon"></i>
-                    Challenges
-                </a>
+                    Saved
+                </div>
                 <div
                     id="judge0-theme-toggle-btn"
                     class="icon link item judge0-showThemeButton"
@@ -247,6 +206,12 @@
         </div>
 
         <div id="judge0-site-content"></div>
+
+        <!-- Panels moved into the layout once it initialises -->
+        <div hidden>
+            <div id="skwtr-challenge-panel" class="skwtr-challenge-panel"></div>
+            <div id="skwtr-tests-panel" class="skwtr-tests-panel"></div>
+        </div>
 
         <!-- Login Modal -->
         <div id="skwtr-login-modal" class="ui tiny modal">
@@ -319,75 +284,11 @@
             </div>
         </div>
 
-        <!-- AI Chat Container -->
-        <div
-            id="judge0-chat-container"
-            class="ui segment"
-            style="height: 100%; flex-direction: column"
-        >
-            <div class="ui top attached borderless menu">
-                <div class="item">
-                    <div class="ui toggle checked checkbox">
-                        <input
-                            id="judge0-inline-suggestions"
-                            type="checkbox"
-                            checked
-                        />
-                        <label>Inline Suggestions</label>
-                    </div>
-                </div>
-                <div class="right menu">
-                    <div class="fitted item">
-                        <select
-                            id="judge0-chat-model-select"
-                            class="ui search selection dropdown item"
-                        >
-                            <option value="default">Default</option>
-                            <!-- Other models will be added dynamically -->
-                        </select>
-                    </div>
-                </div>
-            </div>
-            <div
-                id="judge0-chat-messages"
-                style="flex: 1; overflow-y: auto; padding: 10px"
-            ></div>
-            <div
-                id="judge0-chat-input-container"
-                class="ui basic segment"
-                style="margin: 0"
-            >
-                <form id="judge0-chat-form" class="ui fluid action input">
-                    <input
-                        id="judge0-chat-user-input"
-                        type="text"
-                        placeholder="Ask the AI assistant..."
-                    />
-                    <button
-                        id="judge0-chat-send-button"
-                        class="ui primary icon button"
-                        type="submit"
-                    >
-                        <i class="arrow up icon"></i>
-                    </button>
-                </form>
-            </div>
-        </div>
-
         <!-- Status Line -->
         <div
             id="judge0-status-line"
             class="ui bottom right attached mini label judge0-showStatusLine"
         ></div>
-
-        <!-- Copyright -->
-        <div class="ui bottom center attached mini label judge0-showCopyright">
-            © 2026
-            <a href="https://github.com/glenngenre/ide" target="_blank">SKWTR IDE</a>
-            • Based on
-            <a href="https://github.com/judge0/ide" target="_blank">Judge0 IDE</a>
-            by Judge0 d.o.o. • MIT License
-        </div>
 
         <script>
             if ("serviceWorker" in navigator) {
