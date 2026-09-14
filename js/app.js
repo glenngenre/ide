@@ -2,7 +2,7 @@ import configuration from "./configuration.js";
 import "./ui/theme.js";
 import { marked } from "marked";
 import DOMPurify from "dompurify";
-import { requireAuthentication, getAuthToken, initAuth } from "./auth.js";
+import { initAuth, getAuthToken } from "./auth.js";
 import { sendChatMessage, getInlineCompletion } from "./integrations/ai.js";
 import {
     DEFAULT_SOURCE,
@@ -266,11 +266,26 @@ function setupChat() {
 
 const errorModal = createErrorModal();
 
+async function loadLanguages() {
+    if (!getAuthToken()) return;
+    try {
+        await loadLanguagesIntoDropdown(
+            $selectLanguage,
+            getAuthHeaders(getAuthToken()),
+        );
+    } catch (err) {
+        console.error("Failed to load languages:", err);
+        errorModal.showError(
+            "Error Loading Languages",
+            "Failed to load available programming languages. Please check your connection and try again.",
+        );
+    }
+}
+
 window.addEventListener("resize", refreshLayoutSize);
 
 document.addEventListener("DOMContentLoaded", async function () {
     initAuth();
-    requireAuthentication();
     $(".ui.selection.dropdown").dropdown();
     $("[data-content]").popup({ lastResort: "left center" });
     refreshSiteContentHeight();
@@ -288,18 +303,12 @@ document.addEventListener("DOMContentLoaded", async function () {
         });
         markStateDirty();
     });
-    try {
-        await loadLanguagesIntoDropdown(
-            $selectLanguage,
-            getAuthHeaders(getAuthToken()),
-        );
-    } catch (err) {
-        console.error("Failed to load languages:", err);
-        errorModal.showError(
-            "Error Loading Languages",
-            "Failed to load available programming languages. Please check your connection and try again.",
-        );
-    }
+
+    await loadLanguages();
+
+    window.addEventListener("skwtr:login", () => {
+        loadLanguages();
+    });
 
     $compilerOptions = $("#compiler-options");
     $commandLineArguments = $("#command-line-arguments");

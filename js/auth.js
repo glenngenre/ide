@@ -58,6 +58,9 @@ async function handleLogin(e) {
             document.getElementById('login-password').value = '';
 
             console.log('Login successful');
+            window.dispatchEvent(new CustomEvent('skwtr:login', {
+                detail: { username: data.username || username, role: data.role || 'user' }
+            }));
         } else {
             errorDiv.textContent = data.error || 'Invalid username or password';
             errorDiv.style.display = 'block';
@@ -87,6 +90,16 @@ export function logout() {
     localStorage.removeItem('skwtr_role');
     localStorage.removeItem('skwtr_username');
     window.location.reload();
+}
+
+export function handleUnauthorized() {
+    localStorage.removeItem('skwtr_jwt');
+    localStorage.removeItem('skwtr_role');
+    localStorage.removeItem('skwtr_username');
+    $('#skwtr-login-modal').modal({
+        closable: false,
+        transition: 'fade up'
+    }).modal('show');
 }
 
 export function requireAuthentication() {
