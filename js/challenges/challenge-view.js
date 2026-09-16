@@ -312,6 +312,31 @@ export function createChallengeView({
         }
     }
 
+    function renderStreamResult(result, { completed, total, passed }) {
+        if (!caseElements.has(result.index)) appendCase(result);
+        const { state, label } = getCaseVerdict(result);
+        setCaseState(result.index, state, label);
+        setCaseDetails(result.index, result);
+        if (summaryElement) {
+            summaryElement.textContent =
+                `${passed}/${total} passed · ${completed}/${total} complete`;
+            summaryElement.className = "skwtr-tests-summary";
+        }
+    }
+
+    function stopStreaming(completed, total) {
+        caseElements.forEach((_, index) => {
+            const refs = caseElements.get(index);
+            if (refs?.item.classList.contains("skwtr-test-running")) {
+                setCaseState(index, "idle", "Not run");
+            }
+        });
+        if (summaryElement) {
+            summaryElement.textContent = `${completed}/${total} completed · stopped`;
+            summaryElement.className = "skwtr-tests-summary skwtr-tests-summary-fail";
+        }
+    }
+
     function setRunning(isRunning) {
         if (runAllButton) {
             runAllButton.disabled = isRunning || caseElements.size === 0;
@@ -323,9 +348,11 @@ export function createChallengeView({
         renderDescription,
         renderTests,
         renderResults,
+        renderStreamResult,
         resetResults,
         setAllRunning,
         setRunning,
         setSolved: renderSolvedBadge,
+        stopStreaming,
     };
 }

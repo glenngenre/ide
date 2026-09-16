@@ -15,7 +15,11 @@ import { createStatusUI } from "./ui/status-bar.js";
 import { createErrorModal } from "./ui/error-modal.js";
 import { registerKeyboardShortcuts } from "./ui/keyboard-shortcuts.js";
 import { debounce } from "./state/persistence.js";
-import { fetchDailyChallenges, submitSolution } from "./challenges/challenge-api.js";
+import {
+    fetchDailyChallenges,
+    submitSolution,
+    submitSolutionStream,
+} from "./challenges/challenge-api.js";
 import { languageLabel, editorModeFor } from "./challenges/language-labels.js";
 import {
     getChallengeLanguages,
@@ -304,24 +308,63 @@ async function runTests() {
     statusUI.setExecutionStatus("Submitting…");
 
     const startedAt = performance.now();
+    const streamedResults = new Map();
+    let streamTotal = testCases.length;
     try {
-        const raw = await submitSolution(
+        await submitSolutionStream(
             challenge.id,
             { language: currentLanguageKey, sourceCode: sourceEditor.getValue() },
+            {
+                start(event) {
+                    streamTotal = Number.isInteger(event?.total) ? event.total : testCases.length;
+                    statusUI.setExecutionStatus(`Running 0/${streamTotal} test cases…`);
+                },
+                result(rawResult) {
+                    const fallbackIndex = streamedResults.size;
+                    const index = Number.isInteger(rawResult?.index)
+                        ? rawResult.index
+                        : fallbackIndex;
+                    const localCase = testCases.find((testCase) => testCase.index === index) || {
+                        index,
+                        hidden: Boolean(rawResult?.hidden),
+                    };
+                    const response = normalizeSubmitResponse(
+                        { results: [{ ...rawResult, index }] },
+                        [localCase],
+                    );
+                    const result = response.results[0];
+                    streamedResults.set(index, result);
+                    const completed = streamedResults.size;
+                    const passed = [...streamedResults.values()]
+                        .filter((item) => item.passed === true).length;
+                    view.renderStreamResult(result, {
+                        completed,
+                        total: streamTotal,
+                        passed,
+                    });
+                    statusUI.setExecutionStatus(
+                        `Running ${completed}/${streamTotal} test cases…`,
+                    );
+                },
+                done(raw) {
+                    const response = normalizeSubmitResponse(raw, testCases);
+                    view.renderResults(response);
+
+                    if (response.solved && !challenge.solved) {
+                        challenge.solved = true;
+                        view.setSolved(true);
+                    }
+
+                    const verdict = formatSubmissionVerdict(response);
+                    statusUI.setExecutionStatus(
+                        `${verdict}, ${formatRunStats(response, startedAt)}`,
+                    );
+                },
+            },
             authHeaders(),
         );
-        const response = normalizeSubmitResponse(raw, testCases);
-        view.renderResults(response);
-
-        if (response.solved && !challenge.solved) {
-            challenge.solved = true;
-            view.setSolved(true);
-        }
-
-        const verdict = formatSubmissionVerdict(response);
-        statusUI.setExecutionStatus(`${verdict}, ${formatRunStats(response, startedAt)}`);
     } catch (err) {
-        view.resetResults();
+        view.stopStreaming(streamedResults.size, streamTotal);
         statusUI.setExecutionStatus("");
         showApiError("Submission failed", err);
     } finally {
