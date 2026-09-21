@@ -1,71 +1,48 @@
-import { getAuthToken } from '../auth.js';
-
-const API_BASE_URL = 'https://api.apps.skwtr.com/ide/v1';
+import { apiFetch, handleUnauthorized } from "../auth.js";
+import { API_BASE_URL } from "../constants.js";
 
 export async function sendChatMessage(messages, model, stream = false) {
-    const token = getAuthToken();
-
-    if (!token) {
-        console.error("Unauthorized: Please log in first.");
-        $('#skwtr-login-modal').modal('show');
-        return null;
-    }
-
     try {
-        const response = await fetch(`${API_BASE_URL}/ai/chat`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({
-                messages: messages,
-                model: model,
-                stream: stream
-            })
+        const response = await apiFetch(`${API_BASE_URL}/ai/chat`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ messages, model, stream }),
         });
 
         if (response.status === 401) {
-            localStorage.removeItem('skwtr_jwt');
-            localStorage.removeItem('skwtr_role');
-            localStorage.removeItem('skwtr_username');
-            $('#skwtr-login-modal').modal('show');
+            handleUnauthorized();
             return null;
         }
 
         return await response.json();
     } catch (error) {
-        console.error('Chat error:', error);
+        console.error("Chat error:", error);
         return null;
     }
 }
 
-export async function getInlineCompletion(textBeforeCursor, textAfterCursor, model, signal) {
-    const token = getAuthToken();
-    if (!token) return null;
-
+export async function getInlineCompletion(
+    textBeforeCursor,
+    textAfterCursor,
+    model,
+    signal,
+) {
     try {
-        const response = await fetch(`${API_BASE_URL}/ai/complete`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
+        const response = await apiFetch(`${API_BASE_URL}/ai/complete`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                model: model,
+                model,
                 prompt: textBeforeCursor,
                 suffix: textAfterCursor,
                 stream: false,
-                options: { temperature: 0.1, num_predict: 64 }
+                options: { temperature: 0.1, num_predict: 64 },
             }),
             signal,
         });
 
         if (response.status === 401) {
-            localStorage.removeItem('skwtr_jwt');
-            localStorage.removeItem('skwtr_role');
-            localStorage.removeItem('skwtr_username');
-            $('#skwtr-login-modal').modal('show');
+            handleUnauthorized();
             return null;
         }
 
@@ -74,9 +51,8 @@ export async function getInlineCompletion(textBeforeCursor, textAfterCursor, mod
         const data = await response.json();
         return data?.response || null;
     } catch (error) {
-        // Superseded by a newer keystroke; not an error worth logging.
-        if (error?.name === 'AbortError') return null;
-        console.error('Inline completion error:', error);
+        if (error?.name === "AbortError") return null;
+        console.error("Inline completion error:", error);
         return null;
     }
 }

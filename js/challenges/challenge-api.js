@@ -1,5 +1,6 @@
 import { API_BASE_URL } from "../constants.js";
 import { networkError, toJudge0Error } from "../api.js";
+import { apiFetch, getAuthToken } from "../auth.js";
 
 const CHALLENGES_API_BASE_URL = `${API_BASE_URL}/challenges`;
 
@@ -13,16 +14,14 @@ function buildSubmitBody({ language, sourceCode, testCases }) {
     }
     return body;
 }
-
-async function request(path, { method = "GET", body, authHeaders = {} } = {}) {
+async function request(path, { method = "GET", body } = {}) {
     let response;
     try {
-        response = await fetch(`${CHALLENGES_API_BASE_URL}${path}`, {
+        response = await apiFetch(`${CHALLENGES_API_BASE_URL}${path}`, {
             method,
             headers: {
                 "Content-Type": "application/json",
                 Accept: "application/json",
-                ...authHeaders,
             },
             body: body === undefined ? undefined : JSON.stringify(body),
         });
@@ -35,23 +34,17 @@ async function request(path, { method = "GET", body, authHeaders = {} } = {}) {
     return response;
 }
 
-export async function fetchDailyChallenges(authHeaders = {}) {
-    const response = await request("/daily", { authHeaders });
+export async function fetchDailyChallenges() {
+    const response = await request("/daily");
     const data = await response.json();
     if (Array.isArray(data)) return data;
     return data && typeof data === "object" ? [data] : [];
 }
-
-export async function submitSolution(
-    id,
-    submission,
-    authHeaders = {},
-) {
+export async function submitSolution(id, submission) {
     const body = buildSubmitBody(submission);
     const response = await request(`/${encodeURIComponent(id)}/submit`, {
         method: "POST",
         body,
-        authHeaders,
     });
     return response.json();
 }
@@ -74,26 +67,26 @@ function dispatchEvent(block, handlers) {
     try {
         payload = JSON.parse(data.join("\n"));
     } catch (err) {
-        throw new Error(`Invalid ${event} event from challenge stream: ${err.message}`);
+        throw new Error(
+            `Invalid ${event} event from challenge stream: ${err.message}`,
+        );
     }
 
     if (event === "error") {
         const message =
             typeof payload === "string"
                 ? payload
-                : payload?.error || payload?.message || "Challenge execution failed.";
+                : payload?.error ||
+                  payload?.message ||
+                  "Challenge execution failed.";
         throw new Error(message);
     }
     handlers[event]?.(payload);
     return event === "done";
 }
 
-export async function submitSolutionStream(
-    id,
-    submission,
-    handlers = {},
-    authHeaders = {},
-) {
+export async function submitSolutionStream(id, submission, handlers = {}) {
+    const token = getAuthToken();
     let response;
     try {
         response = await fetch(
@@ -103,7 +96,7 @@ export async function submitSolutionStream(
                 headers: {
                     "Content-Type": "application/json",
                     Accept: "text/event-stream",
-                    ...authHeaders,
+                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
                 },
                 body: JSON.stringify(buildSubmitBody(submission)),
             },

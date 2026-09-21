@@ -1,8 +1,5 @@
-import {
-    LANGUAGE_ID,
-    POLL,
-    CODE_API_BASE_URL,
-} from "./constants.js";
+import { LANGUAGE_ID, POLL, CODE_API_BASE_URL } from "./constants.js";
+import { apiFetch } from "./auth.js";
 
 export function encode(str) {
     return btoa(unescape(encodeURIComponent(str || "")));
@@ -45,15 +42,10 @@ export function networkError(cause) {
     return new Judge0Error(0, "Network error", { message: String(cause) });
 }
 
-export async function fetchLanguages(authHeaders = {}) {
+export async function fetchLanguages() {
     let response;
     try {
-        response = await fetch(`${CODE_API_BASE_URL}/languages`, {
-            headers: {
-                'Content-Type': 'application/json',
-                ...authHeaders,
-            },
-        });
+        response = await apiFetch(`${CODE_API_BASE_URL}/languages`);
     } catch (err) {
         throw networkError(err);
     }
@@ -63,7 +55,7 @@ export async function fetchLanguages(authHeaders = {}) {
 
     const data = await response.json();
     return data
-        .filter(language => language.id !== LANGUAGE_ID.EXCLUDED)
+        .filter((language) => language.id !== LANGUAGE_ID.EXCLUDED)
         .sort((a, b) => a.name.localeCompare(b.name));
 }
 
@@ -112,15 +104,11 @@ export async function buildSubmissionPayload({
     return payload;
 }
 
-export async function createSubmission(payload, authHeaders = {}) {
+export async function createSubmission(payload) {
     let response;
     try {
-        response = await fetch(`${CODE_API_BASE_URL}/run`, {
+        response = await apiFetch(`${CODE_API_BASE_URL}/run`, {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                ...authHeaders,
-            },
             body: JSON.stringify(payload),
         });
     } catch (err) {
@@ -131,7 +119,6 @@ export async function createSubmission(payload, authHeaders = {}) {
     }
 
     const data = await response.json();
-    // Region might not be needed anymore since we use unified API
     const region = response.headers.get("X-Judge0-Region");
     return { token: data.token, region };
 }
@@ -144,15 +131,15 @@ function nextBackoffMs(currentMs) {
     return Math.min(currentMs * POLL.BACKOFF_FACTOR, POLL.BACKOFF_MAX_MS);
 }
 
-export async function pollSubmission(token, onStatusUpdate, authHeaders = {}) {
+export async function pollSubmission(token, onStatusUpdate) {
     let waitMs = POLL.BACKOFF_START_MS;
 
     for (let i = 0; i < POLL.MAX_REQUESTS; i++) {
         let response;
         try {
-            response = await fetch(`${CODE_API_BASE_URL}/status/${encodeURIComponent(token)}`, {
-                headers: authHeaders,
-            });
+            response = await apiFetch(
+                `${CODE_API_BASE_URL}/status/${encodeURIComponent(token)}`,
+            );
         } catch (err) {
             throw networkError(err);
         }
